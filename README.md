@@ -1,12 +1,12 @@
-# KIN
+# KiN
 
-**KIN — an AI coworker that thinks, remembers, and acts.**
+**KiN — an AI coworker that thinks, remembers, and acts.**
 
-KIN is a self-hosted executive layer for a persistent AI coworker. It owns goals, durable memory, decision state, autonomy policy, and audit history while delegating actual agent execution to [TrueForge](https://github.com/truefoundry/trueforge) and model access to [Bifrost](https://github.com/maximhq/bifrost).
+KiN is a self-hosted executive layer for a persistent AI coworker. It owns goals, durable memory, decision state, autonomy policy, and audit history while delegating actual agent execution to [TrueForge](https://github.com/truefoundry/trueforge) and model access to [Bifrost](https://github.com/maximhq/bifrost).
 
-## What KIN does
+## What KiN does
 
-KIN v0.1.0 is intentionally small, but it is real software rather than a scaffold. It provides:
+KiN v0.1.0 is intentionally small, but it is real software rather than a scaffold. It provides:
 
 - an executive decision loop: observe → retrieve → decide → policy → record
 - curated semantic and episodic memory in PostgreSQL + pgvector
@@ -21,7 +21,7 @@ KIN v0.1.0 is intentionally small, but it is real software rather than a scaffol
 The v1 boundary is deliberately clear:
 
 ```text
-KIN = identity + goals + memory + decision making + autonomy + orchestration
+KiN = identity + goals + memory + decision making + autonomy + orchestration
 TrueForge = agent execution + tools + MCP + sandbox + sessions
 Bifrost = model gateway + provider routing
 PostgreSQL/pgvector = durable state + semantic retrieval
@@ -58,7 +58,7 @@ openssl rand -hex 32
 docker compose up -d
 ```
 
-4. Check KIN:
+4. Check KiN:
 
 ```bash
 curl http://127.0.0.1:8000/health
@@ -70,7 +70,7 @@ curl http://127.0.0.1:8000/ready
 ```bash
 curl -X POST http://127.0.0.1:8000/v1/memory \\
   -H 'Content-Type: application/json' \\
-  -d '{"content":"KIN should prefer reversible actions unless a user policy says otherwise.","memory_type":"semantic","importance":0.9,"tags":["kin","autonomy"]}'
+  -d '{"content":"KiN should prefer reversible actions unless a user policy says otherwise.","memory_type":"semantic","importance":0.9,"tags":["kin","autonomy"]}'
 ```
 
 6. Ask the Decision Maker:
@@ -81,11 +81,15 @@ curl -X POST http://127.0.0.1:8000/v1/decide \\
   -d '{"input":"Check why an internal service is unavailable and propose the safest next step.","goal_id":null,"session_id":"default"}'
 ```
 
-The decision call uses the Bifrost OpenAI-compatible endpoint. By default it requests `openai/gpt-4o-mini`; change `KIN_DECISION_MODEL` in `.env` to another logical Bifrost model name.
+The Decision Maker calls Bifrost, with **OpenRouter behind Bifrost**. The standard lane uses `anthropic/claude-sonnet-5.5`; fast and deep lanes use `google/gemini-3.8-flash` and `anthropic/claude-opus-5.5`. The lane can be selected with `context.complexity=fast|standard|deep`.
+
+## Decision model and JEV
+
+JEV 1.13 remains an optional future gate setting and is disabled by default. OpenRouter documents JEV as a non-generative model exposed through its Decisions API, not the normal chat-completions API, so it is not used as KiN's primary Bifrost chat model. The main executive path uses reasoning models with structured output support.
 
 ## TrueForge
 
-TrueForge is intentionally not reimplemented in KIN. KIN talks to the current TrueForge SDK and delegates execution to a TrueForge agent/session. The first setup step is to create an agent in the TrueForge UI and configure its model provider to reach Bifrost (or another OpenAI-compatible model endpoint).
+TrueForge is intentionally not reimplemented in KiN. KiN talks to the current TrueForge SDK and delegates execution to a TrueForge agent/session. The first setup step is to create an agent in the TrueForge UI and configure its model provider to reach Bifrost (or another OpenAI-compatible model endpoint).
 
 TrueForge is served at:
 
@@ -93,7 +97,7 @@ TrueForge is served at:
 http://127.0.0.1:8790
 ```
 
-The service itself is kept on the Compose network and is mapped to localhost only. Hosted mode is used (`STANDALONE=false`) so TrueForge uses PostgreSQL + Redis, matching its current upstream deployment model.
+The service is kept on the Compose network and its Web UI + API are mapped to `127.0.0.1:8790` by default. Hosted mode is used (`STANDALONE=false`) so TrueForge uses PostgreSQL + Redis, matching its current upstream deployment model.
 
 For an OpenAI-compatible model provider in TrueForge, the internal Bifrost endpoint is:
 
@@ -101,11 +105,15 @@ For an OpenAI-compatible model provider in TrueForge, the internal Bifrost endpo
 http://bifrost:8080
 ```
 
-The KIN TrueForge client uses a configurable agent name when `TRUEFORGE_AGENT_NAME` is set, or an inline agent spec using `TRUEFORGE_MODEL` when it is not. The latter still requires the model to exist in the TrueForge model registry/catalog.
+The KiN TrueForge client uses a configurable agent name when `TRUEFORGE_AGENT_NAME` is set, or an inline agent spec using `TRUEFORGE_MODEL` when it is not. The latter still requires the model to exist in the TrueForge model registry/catalog.
+
+## TrueForge Web UI
+
+TrueForge serves its Web UI and API from the same server. KiN publishes it on `127.0.0.1:8790` so you can configure agents, models, skills, MCP servers, and approvals. Keep this local by default; for remote/shared access use TLS and TrueForge OIDC. Upstream warns that an unauthenticated hosted deployment gives anyone who can reach the URL the shared admin identity.
 
 ## Bifrost
 
-Bifrost is configured declaratively using `infra/bifrost/config.json`. The configuration is file-only (`config_store.enabled=false`) and request-log persistence is disabled in v0.1.0, so Bifrost does not add another stateful dependency. Secrets are referenced with Bifrost's `env.*` syntax; no provider secret is stored in Git.
+Bifrost is configured declaratively using `infra/bifrost/config.json`. **OpenRouter is the sample provider behind Bifrost**. The configuration is file-only (`config_store.enabled=false`) and request-log persistence is disabled in v0.1.0. The provider credential is referenced with Bifrost's `env.OPENROUTER_API_KEY` syntax; no real secret is stored in Git.
 
 Bifrost is served at:
 
@@ -122,17 +130,17 @@ http://bifrost:8080/v1/embeddings
 
 ## Memory model
 
-KIN uses three explicit memory classes:
+KiN uses three explicit memory classes:
 
 1. **Working memory** — JSON state in Redis for the current session/task.
 2. **Semantic memory** — curated durable facts/preferences/projects in PostgreSQL + pgvector.
-3. **Episodic memory** — durable event history recording what KIN decided, what it attempted, and what the result was.
+3. **Episodic memory** — durable event history recording what KiN decided, what it attempted, and what the result was.
 
 Memory is never automatically persisted merely because text appeared in a conversation. The API requires the caller to create a durable memory, and the decision schema can emit memory directives for future consolidation logic.
 
 ## Autonomy
 
-The default policy is `balanced` and deterministic. The LLM proposes intent/risk; KIN applies a second, local policy gate using action class, risk, impact, reversibility, confidence, environment, and configured policy.
+Autonomy uses a configurable profile (`cautious`, `balanced`, `autonomous`) plus a mode derived from the actual decision (`idle`, `observe`, `investigate`, `communicate`, `execute`, `delegate`, `destructive`). The local gate evaluates risk, impact, reversibility, confidence, environment, and scope; the model cannot grant itself permission.
 
 Examples:
 
@@ -177,7 +185,7 @@ make validate
 Integration tests use the same service URLs as Compose. They are disabled by default so a developer can run unit tests without Docker. To enable them:
 
 ```bash
-export KIN_RUN_INTEGRATION=1
+export KiN_RUN_INTEGRATION=1
 make test-integration
 ```
 
@@ -205,7 +213,7 @@ High-risk actions must be approved. Treat the TrueForge agent runtime as a privi
 
 **`/ready` reports Bifrost unavailable:** verify `docker compose logs bifrost` and the provider/API key configuration in `.env`.
 
-**Decision calls fail with provider errors:** confirm the Bifrost model name and provider mapping. Bifrost expects the OpenAI-compatible model format such as `openai/gpt-4o-mini` for the example configuration.
+**Decision calls fail with provider errors:** confirm the Bifrost model name and provider mapping. Verify that the selected OpenRouter model ID is enabled in the Bifrost provider configuration.
 
 **TrueForge execution fails:** configure a TrueForge agent/model first and set `TRUEFORGE_AGENT_NAME`, or configure the selected model in the TrueForge model catalog before using inline execution.
 
@@ -220,4 +228,4 @@ Do not use `down -v` against data you need.
 
 ## Roadmap
 
-Future versions can add proactive goal workers, scheduled execution, richer memory consolidation, channels such as Telegram/email/web, MCP registries, infrastructure connectors, and a browser/mobile UI without moving those responsibilities into KIN's executive core.
+Future versions can add proactive goal workers, scheduled execution, richer memory consolidation, channels such as Telegram/email/web, MCP registries, infrastructure connectors, and a browser/mobile UI without moving those responsibilities into KiN's executive core.
