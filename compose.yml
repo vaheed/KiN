@@ -7,9 +7,9 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-this-postgres-superuser-secret}
-      KIN_DB_NAME: ${KIN_DB_NAME:-kin}
-      KIN_DB_USER: ${KIN_DB_USER:-kin}
-      KIN_DB_PASSWORD: ${KIN_DB_PASSWORD:-change-this-kin-database-secret}
+      KiN_DB_NAME: ${KiN_DB_NAME:-kin}
+      KiN_DB_USER: ${KiN_DB_USER:-kin}
+      KiN_DB_PASSWORD: ${KiN_DB_PASSWORD:-change-this-kin-database-secret}
       TRUEFORGE_DB_NAME: ${TRUEFORGE_DB_NAME:-trueforge}
       TRUEFORGE_DB_USER: ${TRUEFORGE_DB_USER:-trueforge}
       TRUEFORGE_DB_PASSWORD: ${TRUEFORGE_DB_PASSWORD:-change-this-trueforge-database-secret}
@@ -39,10 +39,7 @@ services:
     image: maximhq/bifrost:v2.2.4
     restart: unless-stopped
     environment:
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      GROQ_API_KEY: ${GROQ_API_KEY:-}
-      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       BIFROST_ENCRYPTION_KEY: ${BIFROST_ENCRYPTION_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
     volumes:
       - ./infra/bifrost:/app/data:ro
@@ -84,7 +81,7 @@ services:
       redis:
         condition: service_healthy
     ports:
-      - "${HOST_BIND_IP:-127.0.0.1}:${TRUEFORGE_HOST_PORT:-8790}:8790"
+      - "${TRUEFORGE_HOST_BIND_IP:-127.0.0.1}:${TRUEFORGE_HOST_PORT:-8790}:8790"
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8790/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 10s
@@ -98,35 +95,39 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     environment:
-      KIN_ENV: ${KIN_ENV:-production}
-      KIN_LOG_LEVEL: ${KIN_LOG_LEVEL:-INFO}
-      KIN_HOST: 0.0.0.0
-      KIN_PORT: 8000
-      KIN_DB_NAME: ${KIN_DB_NAME:-kin}
-      KIN_DB_USER: ${KIN_DB_USER:-kin}
-      KIN_DB_PASSWORD: ${KIN_DB_PASSWORD:-change-this-kin-database-secret}
-      KIN_DB_HOST: ${KIN_DB_HOST:-postgres}
-      KIN_DB_PORT: ${KIN_DB_PORT:-5432}
-      KIN_DB_POOL_MIN: ${KIN_DB_POOL_MIN:-1}
-      KIN_DB_POOL_MAX: ${KIN_DB_POOL_MAX:-8}
+      KiN_ENV: ${KiN_ENV:-production}
+      KiN_LOG_LEVEL: ${KiN_LOG_LEVEL:-INFO}
+      KiN_HOST: 0.0.0.0
+      KiN_PORT: 8000
+      KiN_DB_NAME: ${KiN_DB_NAME:-kin}
+      KiN_DB_USER: ${KiN_DB_USER:-kin}
+      KiN_DB_PASSWORD: ${KiN_DB_PASSWORD:-change-this-kin-database-secret}
+      KiN_DB_HOST: ${KiN_DB_HOST:-postgres}
+      KiN_DB_PORT: ${KiN_DB_PORT:-5432}
+      KiN_DB_POOL_MIN: ${KiN_DB_POOL_MIN:-1}
+      KiN_DB_POOL_MAX: ${KiN_DB_POOL_MAX:-8}
       REDIS_HOST: ${REDIS_HOST:-redis}
       REDIS_PORT: ${REDIS_PORT:-6379}
       REDIS_DB: ${REDIS_DB:-0}
-      KIN_WORKING_MEMORY_TTL_SECONDS: ${KIN_WORKING_MEMORY_TTL_SECONDS:-86400}
-      KIN_SESSION_MAX_CONTEXT_ITEMS: ${KIN_SESSION_MAX_CONTEXT_ITEMS:-30}
-      KIN_AUTONOMY_MODE: ${KIN_AUTONOMY_MODE:-balanced}
+      KiN_WORKING_MEMORY_TTL_SECONDS: ${KiN_WORKING_MEMORY_TTL_SECONDS:-86400}
+      KiN_SESSION_MAX_CONTEXT_ITEMS: ${KiN_SESSION_MAX_CONTEXT_ITEMS:-30}
+      KiN_AUTONOMY_PROFILE: ${KiN_AUTONOMY_PROFILE:-balanced}
       BIFROST_URL: ${BIFROST_URL:-http://bifrost:8080}
       BIFROST_API_KEY: ${BIFROST_API_KEY:-}
-      KIN_DECISION_MODEL: ${KIN_DECISION_MODEL:-openai/gpt-4o-mini}
-      KIN_EMBEDDING_MODEL: ${KIN_EMBEDDING_MODEL:-openai/text-embedding-3-small}
-      KIN_EMBEDDING_DIMENSIONS: ${KIN_EMBEDDING_DIMENSIONS:-1536}
-      KIN_MEMORY_SEARCH_LIMIT: ${KIN_MEMORY_SEARCH_LIMIT:-8}
-      KIN_MEMORY_MIN_SIMILARITY: ${KIN_MEMORY_MIN_SIMILARITY:-0.15}
+      KiN_DECISION_MODEL: ${KiN_DECISION_MODEL:-anthropic/claude-sonnet-5.5}
+      KiN_DECISION_MODEL_FAST: ${KiN_DECISION_MODEL_FAST:-google/gemini-3.8-flash}
+      KiN_DECISION_MODEL_DEEP: ${KiN_DECISION_MODEL_DEEP:-anthropic/claude-opus-5.5}
+      KiN_DECISION_GATE_ENABLED: ${KiN_DECISION_GATE_ENABLED:-false}
+      KiN_DECISION_GATE_MODEL: ${KiN_DECISION_GATE_MODEL:-typesafe/jev-1.13}
+      KiN_EMBEDDING_MODEL: ${KiN_EMBEDDING_MODEL:-openai/text-embedding-3-small}
+      KiN_EMBEDDING_DIMENSIONS: ${KiN_EMBEDDING_DIMENSIONS:-1536}
+      KiN_MEMORY_SEARCH_LIMIT: ${KiN_MEMORY_SEARCH_LIMIT:-8}
+      KiN_MEMORY_MIN_SIMILARITY: ${KiN_MEMORY_MIN_SIMILARITY:-0.15}
       TRUEFORGE_URL: http://trueforge:8790
       TRUEFORGE_TOKEN: ${TRUEFORGE_TOKEN:-}
       TRUEFORGE_AGENT_NAME: ${TRUEFORGE_AGENT_NAME:-}
-      TRUEFORGE_MODEL: ${TRUEFORGE_MODEL:-openai/gpt-4o-mini}
-      KIN_TRUEFORGE_ENABLED: ${KIN_TRUEFORGE_ENABLED:-true}
+      TRUEFORGE_MODEL: ${TRUEFORGE_MODEL:-anthropic/claude-sonnet-5.5}
+      KiN_TRUEFORGE_ENABLED: ${KiN_TRUEFORGE_ENABLED:-true}
     depends_on:
       postgres:
         condition: service_healthy
@@ -137,7 +138,7 @@ services:
       trueforge:
         condition: service_healthy
     ports:
-      - "${HOST_BIND_IP:-127.0.0.1}:${KIN_HOST_PORT:-8000}:8000"
+      - "${HOST_BIND_IP:-127.0.0.1}:${KiN_HOST_PORT:-8000}:8000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
       interval: 10s
