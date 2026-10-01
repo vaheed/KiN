@@ -34,13 +34,17 @@ sequenceDiagram
     participant C as Client
     participant K as KiN Core
     participant R as Redis
+    participant M as Mem0 OSS
     participant P as PostgreSQL/pgvector
     participant B as Bifrost
     participant T as TrueForge
 
     C->>K: POST /v1/decide
     K->>R: Read working memory
-    K->>P: Semantic memory search
+    K->>M: Semantic memory search
+    M->>P: Vector/filter lookup
+    P-->>M: Ranked memories
+    M-->>K: Consolidated memory context
     K->>B: Executive decision request
     B-->>K: Structured decision
     K->>K: Apply autonomy policy
@@ -127,10 +131,10 @@ KiN uses OpenRouter model IDs, such as `anthropic/claude-sonnet-5.5`, and does n
 ```mermaid
 graph TB
     subgraph Compose[Docker Compose network]
-        K[kin:8000]
+        K[kin:8000 + Mem0 OSS]
         T[trueforge:8790]
         B[bifrost:8080]
-        P[(postgres:5432)]
+        P[(postgres:5432 + pgvector)]
         R[(redis:6379)]
     end
 
