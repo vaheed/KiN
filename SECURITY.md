@@ -1,6 +1,6 @@
 # Security
 
-KIN can eventually control real infrastructure, so the security model treats model output as an untrusted proposal rather than an authorization decision.
+KiN can eventually control real infrastructure, so the security model treats model output as an untrusted proposal rather than an authorization decision.
 
 ## Defaults
 
@@ -8,10 +8,12 @@ KIN can eventually control real infrastructure, so the security model treats mod
 - PostgreSQL and Redis are internal-only and have no host port mapping.
 - Bifrost credentials are injected as environment variables and referenced from its config with `env.*`.
 - TrueForge runs in hosted mode with a service API key.
-- KIN applies a deterministic autonomy policy after model output.
+- KiN applies a deterministic autonomy policy after model output.
 - High/critical risk, destructive/security-sensitive, high-impact, irreversible, or low-confidence actions require user approval.
 
 ## Before exposing anything beyond localhost
+
+TrueForge's Web UI and API share the hosted service. Keep it bound to localhost by default. For remote/shared access, put it behind TLS and enable TrueForge OIDC before exposing it to an untrusted network.
 
 Enable an authenticated reverse proxy with TLS. Do not directly publish PostgreSQL or Redis. Enable TrueForge OIDC for shared deployments, replace demo secrets, restrict MCP connectors and skills, and use least-privilege identities for infrastructure tools.
 
@@ -19,7 +21,7 @@ For production, prefer a dedicated secret manager and short-lived credentials. A
 
 ## Model/provider boundaries
 
-A model may suggest an action, but the model response is not an authorization grant. KIN's policy code is the final safety floor for the executive decision. TrueForge tool approvals remain independently enforced by TrueForge for tools marked `@write` or `@destructive`.
+A model may suggest an action, but the model response is not an authorization grant. KiN's policy code is the final safety floor for the executive decision. TrueForge tool approvals remain independently enforced by TrueForge for tools marked `@write` or `@destructive`.
 
 ## Auditability
 
@@ -32,6 +34,6 @@ The `events` table records decision creation, goal creation, memory creation/con
 3. Enable TrueForge OIDC before sharing its URL.
 4. Restrict the TrueForge model-provider outbound allowlist to only the model gateways you intentionally use.
 5. Require approvals for production changes and destructive tools.
-6. Back up both KIN and TrueForge PostgreSQL databases.
+6. Back up both KiN and TrueForge PostgreSQL databases.
 7. Monitor `/health`, `/ready`, TrueForge `/healthz`, and Bifrost `/health`.
 8. Review and rotate provider credentials.
