@@ -41,6 +41,14 @@ class Settings(BaseSettings):
     decision_model_deep: str = Field(default="anthropic/claude-opus-5.5", alias="KiN_DECISION_MODEL_DEEP")
     decision_gate_enabled: bool = Field(default=False, alias="KiN_DECISION_GATE_ENABLED")
     decision_gate_model: str = Field(default="typesafe/jev-1.13", alias="KiN_DECISION_GATE_MODEL")
+    # Mem0 durable memory configuration. Mem0's LLM and embedder both use the
+    # internal OpenAI-compatible Bifrost endpoint; OPENROUTER_API_KEY is never
+    # injected into the KiN container, so Mem0 cannot bypass Bifrost.
+    memory_llm_model: str = Field(default="google/gemini-3.8-flash", alias="KiN_MEMORY_LLM_MODEL")
+    memory_user_id: str = Field(default="owner", alias="KiN_MEMORY_USER_ID")
+    memory_agent_id: str = Field(default="kin", alias="KiN_MEMORY_AGENT_ID")
+    memory_collection: str = Field(default="kin_memories", alias="KiN_MEMORY_COLLECTION")
+    memory_history_db_path: str = Field(default="/app/data/mem0/history.db", alias="KiN_MEMORY_HISTORY_DB_PATH")
     embedding_model: str = Field(default="openai/text-embedding-3-small", alias="KiN_EMBEDDING_MODEL")
     embedding_dimensions: int = Field(default=1536, alias="KiN_EMBEDDING_DIMENSIONS", ge=1, le=4096)
     memory_search_limit: int = Field(default=8, alias="KiN_MEMORY_SEARCH_LIMIT", ge=1, le=50)
