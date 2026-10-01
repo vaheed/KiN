@@ -119,6 +119,12 @@ services:
       KiN_DECISION_MODEL_DEEP: ${KiN_DECISION_MODEL_DEEP:-anthropic/claude-opus-5.5}
       KiN_DECISION_GATE_ENABLED: ${KiN_DECISION_GATE_ENABLED:-false}
       KiN_DECISION_GATE_MODEL: ${KiN_DECISION_GATE_MODEL:-typesafe/jev-1.13}
+      KiN_MEMORY_LLM_MODEL: ${KiN_MEMORY_LLM_MODEL:-google/gemini-3.8-flash}
+      KiN_MEMORY_USER_ID: ${KiN_MEMORY_USER_ID:-owner}
+      KiN_MEMORY_AGENT_ID: ${KiN_MEMORY_AGENT_ID:-kin}
+      KiN_MEMORY_COLLECTION: ${KiN_MEMORY_COLLECTION:-kin_memories}
+      KiN_MEMORY_HISTORY_DB_PATH: ${KiN_MEMORY_HISTORY_DB_PATH:-/app/data/mem0/history.db}
+      KiN_EMBEDDING_MODEL: ${KiN_EMBEDDING_MODEL:-openai/text-embedding-3-small}
       KiN_EMBEDDING_MODEL: ${KiN_EMBEDDING_MODEL:-openai/text-embedding-3-small}
       KiN_EMBEDDING_DIMENSIONS: ${KiN_EMBEDDING_DIMENSIONS:-1536}
       KiN_MEMORY_SEARCH_LIMIT: ${KiN_MEMORY_SEARCH_LIMIT:-8}
@@ -128,6 +134,8 @@ services:
       TRUEFORGE_AGENT_NAME: ${TRUEFORGE_AGENT_NAME:-}
       TRUEFORGE_MODEL: ${TRUEFORGE_MODEL:-anthropic/claude-sonnet-5.5}
       KiN_TRUEFORGE_ENABLED: ${KiN_TRUEFORGE_ENABLED:-true}
+      MEM0_DIR: /app/data/mem0
+      MEM0_TELEMETRY: "false"
     depends_on:
       postgres:
         condition: service_healthy
@@ -137,6 +145,8 @@ services:
         condition: service_healthy
       trueforge:
         condition: service_healthy
+    volumes:
+      - kin_data:/app/data
     ports:
       - "${HOST_BIND_IP:-127.0.0.1}:${KiN_HOST_PORT:-8000}:8000"
     healthcheck:
@@ -149,3 +159,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  kin_data:
