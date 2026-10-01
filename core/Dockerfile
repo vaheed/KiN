@@ -12,6 +12,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app ./app
 
 RUN useradd --create-home --uid 10001 kin \
+    && mkdir -p /app/data \
     && chown -R kin:kin /app
 
 USER kin
