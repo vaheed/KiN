@@ -1,6 +1,6 @@
-# Contributing to KIN
+# Contributing to KiN
 
-KIN favors small, explicit changes over infrastructure or abstraction growth.
+KiN favors small, explicit changes over infrastructure or abstraction growth.
 
 ## Local setup
 
@@ -14,7 +14,7 @@ make validate
 
 ## Principles
 
-- KIN is the executive layer; do not reimplement TrueForge/Bifrost functionality.
+- KiN is the executive layer; do not reimplement TrueForge/Bifrost functionality.
 - Prefer a single Compose stack until a real scaling constraint requires otherwise.
 - Keep model/provider code behind Bifrost.
 - Treat model output as data that must be validated and policy-checked.
