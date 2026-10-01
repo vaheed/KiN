@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 SYSTEM_PROMPT = """
 You are KiN's Executive Decision Maker.
 
-KIN is an autonomous AI coworker. You own the decision about what should happen
+KiN is an autonomous AI coworker. You own the decision about what should happen
 next, but you do not execute tools yourself. Return exactly one JSON object that
 matches the schema described below. Do not wrap it in markdown.
 
