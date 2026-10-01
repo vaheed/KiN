@@ -9,7 +9,7 @@ KiN is a self-hosted executive layer for a persistent AI coworker. It owns goals
 KiN v0.1.0 is intentionally small, but it is real software rather than a scaffold. It provides:
 
 - an executive decision loop: observe → retrieve → decide → policy → record
-- curated semantic and episodic memory in PostgreSQL + pgvector
+- Mem0 OSS for durable semantic memory, backed by PostgreSQL + pgvector
 - working memory in Redis
 - explicit goal storage
 - deterministic autonomy/approval gates around model-generated decisions
@@ -24,7 +24,8 @@ The v1 boundary is deliberately clear:
 KiN = identity + goals + memory + decision making + autonomy + orchestration
 TrueForge = agent execution + tools + MCP + sandbox + sessions
 Bifrost = model gateway + provider routing
-PostgreSQL/pgvector = durable state + semantic retrieval
+Mem0 = durable memory extraction, consolidation, retrieval, and forgetting
+PostgreSQL/pgvector = durable memory storage for Mem0 + KiN operational state
 Redis = working state + transient execution context
 ```
 
@@ -130,13 +131,15 @@ http://bifrost:8080/v1/embeddings
 
 ## Memory model
 
-KiN uses three explicit memory classes:
+KiN uses three complementary memory layers:
 
 1. **Working memory** — JSON state in Redis for the current session/task.
-2. **Semantic memory** — curated durable facts/preferences/projects in PostgreSQL + pgvector.
-3. **Episodic memory** — durable event history recording what KiN decided, what it attempted, and what the result was.
+2. **Durable memory** — **Mem0 OSS** performs extraction, consolidation, deduplication, updates, semantic search, and memory history. Its vector store is PostgreSQL + pgvector.
+3. **Episodic/audit history** — KiN's PostgreSQL events table records decisions, execution observations, approvals, and integration outcomes.
 
-Memory is never automatically persisted merely because text appeared in a conversation. The API requires the caller to create a durable memory, and the decision schema can emit memory directives for future consolidation logic.
+Mem0 runs as a Python library inside KiN Core rather than as another Compose service. Its SQLite history database is persisted under the KiN data volume, while durable memory vectors/payloads live in PostgreSQL.
+
+The model only asks KiN to remember explicitly useful information. Decision Maker memory directives are passed to Mem0 with inference enabled, so Mem0 can merge a new fact with existing memory instead of KiN maintaining a second home-grown consolidation engine. Explicit /v1/memory writes use infer=false because the caller has already supplied curated content.
 
 ## Autonomy
 
@@ -191,7 +194,7 @@ make test-integration
 
 ## Testing and validation
 
-The repository contains tests for configuration parsing, decision schemas, autonomy policy, API behavior, memory repositories, and optional PostgreSQL/Redis integration.
+The repository contains tests for configuration parsing, decision schemas, autonomy policy, API behavior, the Mem0 memory facade, and optional PostgreSQL/Redis integration.
 
 Before a release, run:
 
@@ -213,7 +216,7 @@ High-risk actions must be approved. Treat the TrueForge agent runtime as a privi
 
 **`/ready` reports Bifrost unavailable:** verify `docker compose logs bifrost` and the provider/API key configuration in `.env`.
 
-**Decision calls fail with provider errors:** confirm the Bifrost model name and provider mapping. Verify that the selected OpenRouter model ID is enabled in the Bifrost provider configuration.
+**Decision or memory calls fail with provider errors:** confirm the Bifrost model name and provider mapping. Verify that the selected OpenRouter model ID is enabled in the Bifrost provider configuration. Mem0 uses Bifrost's OpenAI-compatible `/v1` endpoint for both its LLM and embedder; the KiN container intentionally does not receive `OPENROUTER_API_KEY` directly.
 
 **TrueForge execution fails:** configure a TrueForge agent/model first and set `TRUEFORGE_AGENT_NAME`, or configure the selected model in the TrueForge model catalog before using inline execution.
 
