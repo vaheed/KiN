@@ -58,6 +58,8 @@ class BifrostClient:
 
     def embed(self, text: str) -> list[float]:
         payload: dict[str, Any] = {"model": self.settings.embedding_model, "input": text}
+        # The column width and provider model are configured together. The
+        # dimensions field is understood by OpenAI-compatible embedding APIs.
         payload["dimensions"] = self.settings.embedding_dimensions
         response = self.client.post(
             f"{self.settings.bifrost_url.rstrip('/')}/v1/embeddings",
