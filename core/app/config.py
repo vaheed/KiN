@@ -36,7 +36,11 @@ class Settings(BaseSettings):
 
     bifrost_url: str = Field(default="http://bifrost:8080", alias="BIFROST_URL")
     bifrost_api_key: str = Field(default="", alias="BIFROST_API_KEY")
-    decision_model: str = Field(default="openai/gpt-4o-mini", alias="KiN_DECISION_MODEL")
+    decision_model: str = Field(default="anthropic/claude-sonnet-5.5", alias="KiN_DECISION_MODEL")
+    decision_model_fast: str = Field(default="google/gemini-3.8-flash", alias="KiN_DECISION_MODEL_FAST")
+    decision_model_deep: str = Field(default="anthropic/claude-opus-5.5", alias="KiN_DECISION_MODEL_DEEP")
+    decision_gate_enabled: bool = Field(default=False, alias="KiN_DECISION_GATE_ENABLED")
+    decision_gate_model: str = Field(default="typesafe/jev-1.13", alias="KiN_DECISION_GATE_MODEL")
     embedding_model: str = Field(default="openai/text-embedding-3-small", alias="KiN_EMBEDDING_MODEL")
     embedding_dimensions: int = Field(default=1536, alias="KiN_EMBEDDING_DIMENSIONS", ge=1, le=4096)
     memory_search_limit: int = Field(default=8, alias="KiN_MEMORY_SEARCH_LIMIT", ge=1, le=50)
