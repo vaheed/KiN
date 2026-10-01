@@ -32,6 +32,30 @@ Sources:
 - https://github.com/truefoundry/trueforge/blob/main/docs/create-agent/overview.mdx
 - https://github.com/truefoundry/trueforge/blob/main/packages/trueforge/.env.example
 
+## Mem0 OSS
+
+- Repository: mem0ai/mem0
+- Python package: mem0ai
+- KiN pin: **2.2.1**
+- License: Apache-2.0
+- Integration: Python library inside KiN Core via Memory.from_config(...)
+- Durable vector store: PostgreSQL + pgvector
+- Memory history: local SQLite file under /app/data/mem0/history.db
+- LLM + embeddings: Mem0's OpenAI-compatible providers point to **Bifrost /v1**, not directly to OpenRouter
+- Durable-memory calls use Mem0's add(..., infer=True) for Decision Maker directives; explicit API writes use infer=False
+- Memory retrieval is scoped with filters containing user_id and agent_id plus configurable top-k/threshold
+- Native expiration dates are passed to Mem0 when an explicit memory has an expiry date
+- KiN deliberately does not pass OPENROUTER_API_KEY to the KiN container. Current Mem0 OpenAI LLM code checks that environment variable first and would otherwise route around the configured Bifrost endpoint.
+
+Why 2.2.1: PyPI shows **2.2.1** released on 2026-09-25 and lists it as the current release. The upstream documentation confirms Python OSS configuration with Memory.from_config, OpenAI-compatible endpoints, and pgvector support.
+
+Sources:
+
+- https://pypi.org/project/mem0ai/2.2.1/
+- https://github.com/mem0ai/mem0/blob/main/docs/open-source/configuration.mdx
+- https://github.com/mem0ai/mem0/blob/main/docs/components/vectordbs/dbs/pgvector.mdx
+- https://github.com/mem0ai/mem0/blob/main/mem0/memory/main.py
+- https://github.com/mem0ai/mem0/blob/main/mem0/llms/openai.py
 ## Bifrost
 
 - Repository: `maximhq/bifrost`
@@ -93,7 +117,7 @@ Source:
 
 ## Application dependencies
 
-KiN Core is implemented in Python with FastAPI, Pydantic, psycopg, redis-py, HTTPX, and the official TrueForge SDK. These are pinned in `core/requirements.txt`. They are ordinary application dependencies rather than external services, and their exact pins are part of the v0.1.0 reproducibility contract.
+KiN Core is implemented in Python with FastAPI, Pydantic, psycopg, redis-py, HTTPX, Mem0 OSS, and the official TrueForge SDK. These are pinned in `core/requirements.txt`. They are ordinary application dependencies rather than external services, and their exact pins are part of the v0.1.0 reproducibility contract.
 
 ## Integration assumptions and non-claims
 
