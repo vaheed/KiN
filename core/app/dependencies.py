@@ -29,5 +29,7 @@ class Container:
         self.events = EventRepository(self.db)
 
     def shutdown(self) -> None:
+        if self.memories is not None:
+            self.memories.close()
         self.bifrost.close()
         self.db.close()
