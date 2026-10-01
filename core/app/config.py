@@ -13,7 +13,7 @@ class Settings(BaseSettings):
 
     app_name: str = "KiN"
     version: str = "0.1.0"
-    env: Literal["development", "test", "production"] = "production"
+    env: Literal["development", "test", "production"] = Field(default="production", alias="KiN_ENV")
     log_level: str = Field(default="INFO", alias="KiN_LOG_LEVEL")
     host: str = Field(default="0.0.0.0", alias="KiN_HOST")
     port: int = Field(default=8000, alias="KiN_PORT", ge=1, le=65535)
