@@ -100,6 +100,7 @@ class ActionType(str, Enum):
     delete = "delete"
     modify_security = "modify_security"
     external_request = "external_request"
+    delegate = "delegate"
     no_action = "no_action"
 
 
