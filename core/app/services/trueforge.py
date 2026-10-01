@@ -41,7 +41,7 @@ class TrueForgeClient:
                         "spec": {
                             "model": {"name": model},
                             "instructions": (
-                                "You are the execution worker for KIN. Follow the user task exactly, "
+                                "You are the execution worker for KiN. Follow the user task exactly, "
                                 "use tools only when available, report evidence, and stop for required approvals."
                             ),
                         }
