@@ -142,6 +142,8 @@ class Decision(BaseModel):
     action_type: ActionType
     action_risk: ActionRisk
     impact: Literal["low", "medium", "high"]
+    environment: Environment = Environment.unknown
+    scope: Scope = Scope.internal
     reversible: bool
     confidence: float = Field(ge=0, le=1)
     should_investigate: bool = False
