@@ -164,7 +164,8 @@ class Decision(BaseModel):
 
 
 class PolicyResult(BaseModel):
-    mode: Literal["balanced", "strict", "permissive"]
+    mode: DecisionMode
+    profile: Literal["cautious", "balanced", "autonomous"]
     decision_allowed: bool
     execution_class: Literal["automatic", "conditional", "approval"]
     requires_user_approval: bool
