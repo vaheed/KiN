@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     working_memory_ttl_seconds: int = Field(default=86400, alias="KiN_WORKING_MEMORY_TTL_SECONDS", ge=60)
     session_max_context_items: int = Field(default=30, alias="KiN_SESSION_MAX_CONTEXT_ITEMS", ge=1, le=500)
 
-    autonomy_mode: Literal["balanced", "strict", "permissive"] = Field(default="balanced", alias="KiN_AUTONOMY_MODE")
+    autonomy_profile: Literal["cautious", "balanced", "autonomous"] = Field(default="balanced", alias="KiN_AUTONOMY_PROFILE")
 
     bifrost_url: str = Field(default="http://bifrost:8080", alias="BIFROST_URL")
     bifrost_api_key: str = Field(default="", alias="BIFROST_API_KEY")
