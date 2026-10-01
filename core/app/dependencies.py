@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from .config import Settings
 from .db import Database
-from .repositories import EventRepository, GoalRepository, MemoryRepository
+from .repositories import EventRepository, GoalRepository
 from .services.autonomy import AutonomyPolicy
 from .services.bifrost import BifrostClient
 from .services.decision import DecisionMaker
@@ -24,7 +24,7 @@ class Container:
 
     def startup(self) -> None:
         self.db.open()
-        self.memories = MemoryService(settings=self.settings, repo=MemoryRepository(self.db), bifrost=self.bifrost, redis_client=self.db.redis)
+        self.memories = MemoryService(settings=self.settings, redis_client=self.db.redis)
         self.goals = GoalRepository(self.db)
         self.events = EventRepository(self.db)
 
