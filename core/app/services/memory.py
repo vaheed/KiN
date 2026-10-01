@@ -112,7 +112,8 @@ class MemoryService:
                 "kin_source": "api",
             }
         )
-        if item.expires_at:
+        expiration_date = item.expires_at.date().isoformat() if item.expires_at else None
+        if expiration_date:
             metadata["kin_expires_at"] = item.expires_at.isoformat()
 
         result = self._mem0().add(
@@ -121,6 +122,7 @@ class MemoryService:
             agent_id=self.settings.memory_agent_id,
             run_id=session_id,
             metadata=metadata,
+            expiration_date=expiration_date,
             infer=False,
         )
         created = (result.get("results") or [{}])[0]
@@ -229,7 +231,9 @@ class MemoryService:
         if not isinstance(tags, list):
             tags = [str(tags)]
 
-        expires_at = cls._parse_datetime(metadata.get("kin_expires_at"))
+        expires_at = cls._parse_datetime(
+            item.get("expiration_date") or metadata.get("kin_expires_at")
+        )
         created_at = cls._parse_datetime(item.get("created_at")) or datetime.now(timezone.utc)
         updated_at = cls._parse_datetime(item.get("updated_at")) or created_at
 
