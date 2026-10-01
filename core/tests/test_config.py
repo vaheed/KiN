@@ -22,3 +22,8 @@ def test_database_url_quotes_credentials():
         KiN_DB_NAME="kin db",
     )
     assert settings.database_url == "postgresql://kin%40svc:p%40ss%3Aword@postgres:5432/kin%20db"
+
+
+def test_kin_environment_alias() -> None:
+    settings = Settings(KiN_ENV="development")
+    assert settings.env == "development"
