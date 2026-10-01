@@ -1,0 +1,150 @@
+name: kin
+
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.6-pg17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-this-postgres-superuser-secret}
+      KIN_DB_NAME: ${KIN_DB_NAME:-kin}
+      KIN_DB_USER: ${KIN_DB_USER:-kin}
+      KIN_DB_PASSWORD: ${KIN_DB_PASSWORD:-change-this-kin-database-secret}
+      TRUEFORGE_DB_NAME: ${TRUEFORGE_DB_NAME:-trueforge}
+      TRUEFORGE_DB_USER: ${TRUEFORGE_DB_USER:-trueforge}
+      TRUEFORGE_DB_PASSWORD: ${TRUEFORGE_DB_PASSWORD:-change-this-trueforge-database-secret}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  redis:
+    image: redis:8.10.1-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  bifrost:
+    image: maximhq/bifrost:v2.2.4
+    restart: unless-stopped
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      BIFROST_ENCRYPTION_KEY: ${BIFROST_ENCRYPTION_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+    volumes:
+      - ./infra/bifrost:/app/data:ro
+    ports:
+      - "${HOST_BIND_IP:-127.0.0.1}:${BIFROST_HOST_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "-O", "/dev/null", "http://127.0.0.1:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  trueforge:
+    build:
+      context: ./infra/trueforge
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      STANDALONE: "false"
+      HOST: 0.0.0.0
+      PORT: 8790
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${TRUEFORGE_DB_USER:-trueforge}
+      POSTGRES_PASSWORD: ${TRUEFORGE_DB_PASSWORD:-change-this-trueforge-database-secret}
+      POSTGRES_DB: ${TRUEFORGE_DB_NAME:-trueforge}
+      POSTGRES_SCHEMA: trueforge
+      REDIS_URL: redis://redis:6379/0
+      TRUEFORGE_API_KEY: ${TRUEFORGE_API_KEY:-replace-with-a-strong-trueforge-api-key}
+      PUBLIC_BASE_URL: ${TRUEFORGE_PUBLIC_BASE_URL:-http://localhost:8790}
+      SERVER_EXECUTION_TIMEOUT_SECONDS: ${TRUEFORGE_EXECUTION_TIMEOUT_SECONDS:-600}
+      GRACEFUL_TIMEOUT_SECONDS: 30
+      NETWORK_POLICY_ENABLED: ${TRUEFORGE_NETWORK_POLICY_ENABLED:-true}
+      OUTBOUND_URL_ALLOWED_HOSTS: ${TRUEFORGE_OUTBOUND_URL_ALLOWED_HOSTS:-["bifrost"]}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "${HOST_BIND_IP:-127.0.0.1}:${TRUEFORGE_HOST_PORT:-8790}:8790"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8790/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  kin:
+    build:
+      context: ./core
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      KIN_ENV: ${KIN_ENV:-production}
+      KIN_LOG_LEVEL: ${KIN_LOG_LEVEL:-INFO}
+      KIN_HOST: 0.0.0.0
+      KIN_PORT: 8000
+      KIN_DB_NAME: ${KIN_DB_NAME:-kin}
+      KIN_DB_USER: ${KIN_DB_USER:-kin}
+      KIN_DB_PASSWORD: ${KIN_DB_PASSWORD:-change-this-kin-database-secret}
+      KIN_DB_HOST: ${KIN_DB_HOST:-postgres}
+      KIN_DB_PORT: ${KIN_DB_PORT:-5432}
+      KIN_DB_POOL_MIN: ${KIN_DB_POOL_MIN:-1}
+      KIN_DB_POOL_MAX: ${KIN_DB_POOL_MAX:-8}
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_DB: ${REDIS_DB:-0}
+      KIN_WORKING_MEMORY_TTL_SECONDS: ${KIN_WORKING_MEMORY_TTL_SECONDS:-86400}
+      KIN_SESSION_MAX_CONTEXT_ITEMS: ${KIN_SESSION_MAX_CONTEXT_ITEMS:-30}
+      KIN_AUTONOMY_MODE: ${KIN_AUTONOMY_MODE:-balanced}
+      BIFROST_URL: ${BIFROST_URL:-http://bifrost:8080}
+      BIFROST_API_KEY: ${BIFROST_API_KEY:-}
+      KIN_DECISION_MODEL: ${KIN_DECISION_MODEL:-openai/gpt-4o-mini}
+      KIN_EMBEDDING_MODEL: ${KIN_EMBEDDING_MODEL:-openai/text-embedding-3-small}
+      KIN_EMBEDDING_DIMENSIONS: ${KIN_EMBEDDING_DIMENSIONS:-1536}
+      KIN_MEMORY_SEARCH_LIMIT: ${KIN_MEMORY_SEARCH_LIMIT:-8}
+      KIN_MEMORY_MIN_SIMILARITY: ${KIN_MEMORY_MIN_SIMILARITY:-0.15}
+      TRUEFORGE_URL: http://trueforge:8790
+      TRUEFORGE_TOKEN: ${TRUEFORGE_TOKEN:-}
+      TRUEFORGE_AGENT_NAME: ${TRUEFORGE_AGENT_NAME:-}
+      TRUEFORGE_MODEL: ${TRUEFORGE_MODEL:-openai/gpt-4o-mini}
+      KIN_TRUEFORGE_ENABLED: ${KIN_TRUEFORGE_ENABLED:-true}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      bifrost:
+        condition: service_healthy
+      trueforge:
+        condition: service_healthy
+    ports:
+      - "${HOST_BIND_IP:-127.0.0.1}:${KIN_HOST_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+volumes:
+  postgres_data:
+  redis_data:
