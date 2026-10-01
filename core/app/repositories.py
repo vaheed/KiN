@@ -1,13 +1,9 @@
 from __future__ import annotations
 
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 from .db import Database
-from .schemas import EventCreate, GoalCreate, MemoryCreate
-
-
-def _vector_literal(values: list[float]) -> str:
-    return "[" + ",".join(format(float(v), ".10g") for v in values) + "]"
+from .schemas import EventCreate, GoalCreate
 
 
 def _jsonb(value):
@@ -16,52 +12,6 @@ def _jsonb(value):
     except ImportError as exc:
         raise RuntimeError("psycopg is required for PostgreSQL operations") from exc
     return Jsonb(value)
-
-
-class MemoryRepository:
-    def __init__(self, db: Database):
-        self.db = db
-
-    def create(self, item: MemoryCreate, embedding: list[float]) -> dict:
-        memory_id = uuid4()
-        with self.db.connection() as conn:
-            row = conn.execute(
-                """
-                INSERT INTO memories
-                    (id, memory_type, content, embedding, importance, tags, metadata, expires_at)
-                VALUES
-                    (%s, %s, %s, %s::vector, %s, %s, %s, %s)
-                RETURNING id, memory_type, content, importance, tags, metadata, expires_at, created_at, updated_at
-                """,
-                (
-                    memory_id,
-                    item.memory_type.value,
-                    item.content,
-                    _vector_literal(embedding),
-                    item.importance,
-                    _jsonb(item.tags),
-                    _jsonb(item.metadata),
-                    item.expires_at,
-                ),
-            ).fetchone()
-        return row
-
-    def semantic_search(self, embedding: list[float], limit: int, min_similarity: float) -> list[dict]:
-        with self.db.connection() as conn:
-            rows = conn.execute(
-                """
-                SELECT id, memory_type, content, importance, tags, metadata, expires_at, created_at, updated_at,
-                       1 - (embedding <=> %s::vector) AS similarity
-                FROM memories
-                WHERE embedding IS NOT NULL
-                  AND (expires_at IS NULL OR expires_at > now())
-                  AND 1 - (embedding <=> %s::vector) >= %s
-                ORDER BY embedding <=> %s::vector
-                LIMIT %s
-                """,
-                (_vector_literal(embedding), _vector_literal(embedding), min_similarity, _vector_literal(embedding), limit),
-            ).fetchall()
-        return rows
 
 
 class GoalRepository:
