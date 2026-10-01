@@ -92,6 +92,7 @@ class ActionRisk(str, Enum):
 class ActionType(str, Enum):
     observe = "observe"
     investigate = "investigate"
+    research = "research"
     communicate = "communicate"
     change = "change"
     restart = "restart"
