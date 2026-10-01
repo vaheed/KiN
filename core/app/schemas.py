@@ -104,6 +104,30 @@ class ActionType(str, Enum):
     no_action = "no_action"
 
 
+class Environment(str, Enum):
+    local = "local"
+    development = "development"
+    staging = "staging"
+    production = "production"
+    unknown = "unknown"
+
+
+class Scope(str, Enum):
+    self_only = "self"
+    internal = "internal"
+    external = "external"
+
+
+class DecisionMode(str, Enum):
+    idle = "idle"
+    observe = "observe"
+    investigate = "investigate"
+    communicate = "communicate"
+    execute = "execute"
+    delegate = "delegate"
+    destructive = "destructive"
+
+
 class MemoryDirective(BaseModel):
     remember: bool = False
     memory_type: MemoryType = MemoryType.semantic
