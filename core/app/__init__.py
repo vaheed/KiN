@@ -1,0 +1,1 @@
+"""KIN Core application package."""
