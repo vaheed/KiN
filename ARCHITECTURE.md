@@ -1,12 +1,12 @@
-# KIN Architecture
+# KiN Architecture
 
-KIN is an executive/orchestration layer around two upstream systems rather than a competing agent framework or model gateway.
+KiN is an executive/orchestration layer around two upstream systems rather than a competing agent framework or model gateway.
 
 ## 1. System architecture
 
 ```mermaid
 flowchart TD
-    U[You / Channel] --> K[KIN Core]
+    U[You / Channel] --> K[KiN Core]
     K --> D[Decision Maker]
     D --> B[Bifrost]
     B --> M[Model Providers]
@@ -23,7 +23,7 @@ flowchart TD
 
 ### Boundary rule
 
-KIN decides **what should happen next**. TrueForge decides **how agent work is executed**. Bifrost decides **which model/provider serves a model request**.
+KiN decides **what should happen next**. TrueForge decides **how agent work is executed**. Bifrost decides **which model/provider serves a model request**.
 
 ## 2. Main decision loop
 
@@ -31,7 +31,7 @@ KIN decides **what should happen next**. TrueForge decides **how agent work is e
 sequenceDiagram
     autonumber
     participant C as Client
-    participant K as KIN Core
+    participant K as KiN Core
     participant R as Redis
     participant P as PostgreSQL/pgvector
     participant B as Bifrost
@@ -75,26 +75,27 @@ The v0.1.0 memory API deliberately requires an explicit memory type and importan
 
 ```mermaid
 flowchart TD
-    X[Proposed action] --> R{Risk}
-    R -->|low| I{Impact}
-    R -->|medium| C{Confidence + Reversibility}
-    R -->|high/critical| AP[Require approval]
-    I -->|low| AUTO[Automatic]
-    I -->|medium| C
-    C -->|high confidence + reversible| COND[Conditional / automatic]
-    C -->|otherwise| AP
-    ENV[Environment / scope] --> AUTO
-    ENV --> COND
-    ENV --> AP
+    X[Decision] --> MODE[Derive decision mode]
+    MODE --> O[idle / observe / investigate]
+    MODE --> C[communicate]
+    MODE --> E[execute / delegate]
+    MODE --> D[destructive]
+    O --> P[Apply autonomy profile + risk checks]
+    C --> P
+    E --> P
+    D --> AP[Require approval]
+    P -->|safe + reversible + confident| AUTO[Automatic]
+    P -->|moderate risk / external effect| COND[Conditional]
+    P -->|high risk / production / irreversible / low confidence| AP
 ```
 
-The local policy is intentionally stricter than the model prompt. The model cannot grant itself permission.
+The profile (`cautious`, `balanced`, `autonomous`) adjusts thresholds. The mode is derived from the decision itself. JEV 1.13 is an optional future gate because its OpenRouter interface is a Decisions API rather than normal chat completions.
 
 ## 5. TrueForge integration
 
 ```mermaid
 flowchart TD
-    K[KIN Core] --> TF[TrueForge SDK]
+    K[KiN Core] --> TF[TrueForge SDK]
     TF --> S[Session]
     S --> TURN[Turn]
     TURN --> EX[TrueForge Agent Loop]
@@ -104,13 +105,13 @@ flowchart TD
     EX --> REV[Review / Human Checkpoints]
 ```
 
-KIN does not implement MCP, sandboxing, tool approval protocols, or a separate agent runtime. The TrueForge SDK is used only for session/turn orchestration.
+KiN does not implement MCP, sandboxing, tool approval protocols, or a separate agent runtime. The TrueForge SDK is used only for session/turn orchestration.
 
 ## 6. Bifrost / model routing
 
 ```mermaid
 flowchart TD
-    K[KIN Decision Maker] --> G[Bifrost OpenAI-compatible API]
+    K[KiN Decision Maker] --> G[Bifrost -> OpenRouter API]
     G --> R{Routing / Provider}
     R --> O[OpenAI]
     R --> A[Anthropic]
@@ -118,7 +119,7 @@ flowchart TD
     G --> E[Embedding endpoint]
 ```
 
-KIN uses logical model names, such as `openai/gpt-4o-mini`, and does not contain provider-specific SDK code.
+KiN uses OpenRouter model IDs, such as `anthropic/claude-sonnet-5.5`, and does not contain provider-specific SDK code.
 
 ## 7. Docker Compose topology
 
@@ -144,7 +145,7 @@ graph TB
     Host --> B
 ```
 
-PostgreSQL and Redis have no host port mapping.
+PostgreSQL and Redis have no host port mapping. TrueForge publishes its Web UI + API on localhost:8790 by default; public exposure requires TLS + OIDC.
 
 ## 8. Future proactive / long-running goal loop
 
@@ -163,7 +164,7 @@ flowchart TD
     APPROVAL --> EXEC
 ```
 
-The worker/scheduler is intentionally future architecture for v0.1.0. TrueForge itself already supports schedules; KIN will consume that capability rather than building another scheduler when the proactive layer is added.
+The worker/scheduler is intentionally future architecture for v0.1.0. TrueForge itself already supports schedules; KiN will consume that capability rather than building another scheduler when the proactive layer is added.
 
 ## State model
 
@@ -182,11 +183,11 @@ Goal
 
 | Data | Owner | Store |
 | --- | --- | --- |
-| Current working context | KIN | Redis |
-| Goals | KIN | PostgreSQL |
-| Semantic memory | KIN | PostgreSQL + pgvector |
-| Episodic audit/events | KIN | PostgreSQL |
+| Current working context | KiN | Redis |
+| Goals | KiN | PostgreSQL |
+| Semantic memory | KiN | PostgreSQL + pgvector |
+| Episodic audit/events | KiN | PostgreSQL |
 | Agent sessions/turns | TrueForge | TrueForge PostgreSQL schema |
 | Provider routing/config | Bifrost | Bifrost file config in v0.1.0 |
 
-The Compose project uses a single PostgreSQL server with separate databases/users: KIN's `kin` database and TrueForge's `trueforge` database.
+The Compose project uses a single PostgreSQL server with separate databases/users: KiN's `kin` database and TrueForge's `trueforge` database.
