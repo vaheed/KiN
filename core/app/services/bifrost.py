@@ -33,9 +33,9 @@ class BifrostClient:
             headers["Authorization"] = f"Bearer {self.settings.bifrost_api_key}"
         return headers
 
-    def chat_json(self, system_prompt: str, user_prompt: str) -> str:
+    def chat_json(self, system_prompt: str, user_prompt: str, model: str | None = None) -> str:
         payload = {
-            "model": self.settings.decision_model,
+            "model": model or self.settings.decision_model,
             "temperature": 0.1,
             "messages": [
                 {"role": "system", "content": system_prompt},
