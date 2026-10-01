@@ -28,7 +28,7 @@ docker compose down -v
 docker compose up -d
 ```
 
-This removes both KIN and TrueForge PostgreSQL data and Redis data.
+This removes KiN and TrueForge PostgreSQL data, Redis working memory, and the local Mem0 history volume.
 
 ## Health
 
