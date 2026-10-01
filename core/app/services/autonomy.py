@@ -1,4 +1,4 @@
-from __future__
+from __future__ import annotations
 
 from ..config import Settings
 from ..schemas import ActionRisk, ActionType, Decision, PolicyResult
