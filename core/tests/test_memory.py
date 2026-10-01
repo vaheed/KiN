@@ -26,6 +26,7 @@ class FakeMem0:
     def __init__(self, config):
         self.config = config
         self.calls = []
+        self.search_calls = []
         self.memories = {}
         self.__class__.instances.append(self)
 
@@ -49,6 +50,7 @@ class FakeMem0:
         return self.memories.get(memory_id)
 
     def search(self, query, **kwargs):
+        self.search_calls.append((query, kwargs))
         return {
             "results": [
                 {
@@ -115,8 +117,11 @@ def test_search_scopes_to_the_owner_and_kin(settings):
 
     assert len(results) == 1
     assert results[0].similarity == 0.91
-    call = fake.search if hasattr(fake, "search") else None
-    assert call is not None
+    query, kwargs = fake.search_calls[-1]
+    assert query == "preferred answer style"
+    assert kwargs["filters"] == {"user_id": settings.memory_user_id, "agent_id": settings.memory_agent_id}
+    assert kwargs["top_k"] == 8
+    assert kwargs["threshold"] == 0.15
 
 
 def test_working_memory_remains_in_redis(settings):
@@ -125,3 +130,26 @@ def test_working_memory_remains_in_redis(settings):
 
     service.update_working("session-1", {"recent_inputs": ["hello"]})
     assert service.get_working("session-1")["state"]["recent_inputs"] == ["hello"]
+
+
+def test_decision_directive_uses_mem0_consolidation(settings):
+    fake = FakeMem0({"test": True})
+    service = MemoryService(settings, FakeRedis())
+    service._memory = fake
+
+    results = service.remember_directive(
+        "The user prefers infrastructure work to use Jira as the source of truth.",
+        session_id="session-42",
+        memory_type="semantic",
+        importance=0.9,
+        reason="durable workflow preference",
+        goal_id=None,
+        decision_event_id="00000000-0000-0000-0000-000000000002",
+    )
+
+    assert results[0]["event"] == "ADD"
+    _, content, kwargs = fake.calls[-1]
+    assert kwargs["infer"] is True
+    assert kwargs["user_id"] == settings.memory_user_id
+    assert kwargs["agent_id"] == settings.memory_agent_id
+    assert kwargs["run_id"] == "session-42"
