@@ -7,14 +7,12 @@
     "disable_content_logging": true
   },
   "providers": {
-    "openai": {
+    "openrouter": {
       "keys": [
         {
-          "name": "openai-primary",
-          "value": "env.OPENAI_API_KEY",
-          "models": [
-            "*"
-          ],
+          "name": "openrouter-primary",
+          "value": "env.OPENROUTER_API_KEY",
+          "models": ["*"],
           "weight": 1.0
         }
       ],
