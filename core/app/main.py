@@ -43,7 +43,7 @@ async def lifespan(_: FastAPI):
         container.shutdown()
 
 
-app = FastAPI(title="KIN", version=settings.version, lifespan=lifespan)
+app = FastAPI(title="KiN", version=settings.version, lifespan=lifespan)
 
 
 @app.exception_handler(BifrostError)
@@ -60,7 +60,7 @@ async def handle_trueforge_error(_: Request, exc: TrueForgeUnavailable):
 def health() -> dict:
     return {
         "status": "ok",
-        "service": "kin",
+        "service": "KiN",
         "version": settings.version,
         "time": datetime.now(timezone.utc).isoformat(),
     }
@@ -169,6 +169,10 @@ def integrations():
             "model": settings.trueforge_model,
         },
         "memory": {
+            "provider": "mem0",
+            "vector_store": "pgvector",
+            "collection": settings.memory_collection,
+            "memory_llm_model": settings.memory_llm_model,
             "embedding_model": settings.embedding_model,
             "embedding_dimensions": settings.embedding_dimensions,
         },
@@ -214,25 +218,26 @@ def decide(request: DecisionRequest):
         )
     )
 
-    # Persist explicitly requested durable memories. This is intentionally
-    # conservative: the model must emit remember=true and non-empty content.
+    # Let Mem0 perform durable-memory extraction/consolidation for curated
+    # directives. Mem0 decides whether to add, update, or delete related facts.
     for directive in decision.memory_directives:
         if directive.remember and directive.content.strip():
-            memory = container.memories.create(
-                MemoryCreate(
-                    content=directive.content.strip(),
-                    memory_type=directive.memory_type,
-                    importance=directive.importance,
-                    metadata={"source": "decision", "reason": directive.reason, "decision_event_id": str(event["id"])},
-                )
+            memory_results = container.memories.remember_directive(
+                directive.content.strip(),
+                session_id=request.session_id,
+                memory_type=directive.memory_type.value,
+                importance=directive.importance,
+                reason=directive.reason,
+                goal_id=str(request.goal_id) if request.goal_id else None,
+                decision_event_id=str(event["id"]),
             )
             container.events.create(
                 EventCreate(
                     event_type="memory.consolidated",
                     session_id=request.session_id,
                     goal_id=request.goal_id,
-                    summary="Consolidated a Decision Maker memory directive",
-                    payload={"memory_id": str(memory.id), "reason": directive.reason},
+                    summary="Mem0 consolidated a Decision Maker memory directive",
+                    payload={"results": memory_results, "reason": directive.reason},
                 )
             )
 
