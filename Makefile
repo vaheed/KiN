@@ -4,7 +4,7 @@ test:
 	PYTHONPATH=core pytest -q core/tests -m 'not integration'
 
 test-integration:
-	KIN_RUN_INTEGRATION=1 PYTHONPATH=core pytest -q core/tests -m integration
+	KiN_RUN_INTEGRATION=1 PYTHONPATH=core pytest -q core/tests -m integration
 
 validate:
 	python -m compileall -q core/app core/tests
