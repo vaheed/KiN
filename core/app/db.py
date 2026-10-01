@@ -1,8 +1,9 @@
-from __future__ import annotations
+from __future__
 
 import logging
 from contextlib import contextmanager
 from typing import Iterator
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
