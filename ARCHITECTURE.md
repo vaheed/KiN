@@ -15,7 +15,8 @@ flowchart TD
     K --> MM[Memory Manager]
     K --> E[Event / Audit Store]
     MM --> R[Redis Working Memory]
-    MM --> P[PostgreSQL + pgvector]
+    MM --> M[Mem0 OSS]
+    M --> P[PostgreSQL + pgvector]
     K --> T[TrueForge]
     T --> X[Planner / Executor / Reviewer]
     X --> TOOLS[Tools / MCP / Sandbox]
@@ -58,18 +59,18 @@ sequenceDiagram
 
 ```mermaid
 flowchart LR
-    OBS[Conversation / Tool Result / Decision] --> CUR[Memory Manager]
+    OBS[Conversation / Tool Result / Decision] --> CUR[KiN Memory Manager]
     CUR -->|temporary| R[(Redis)]
-    CUR -->|semantic| S[(PostgreSQL)]
-    S --> V[(pgvector)]
-    CUR -->|episodic| E[(PostgreSQL events)]
-    RET[Retrieval] --> R
-    RET --> V
-    RET --> E
-    CONS[Future consolidation] --> CUR
+    CUR -->|durable| M[Mem0 OSS]
+    M --> L[Extraction / consolidation / dedup / retrieval]
+    L --> P[(PostgreSQL + pgvector)]
+    M --> H[(Mem0 SQLite history)]
+    CUR -->|episodic audit| E[(KiN PostgreSQL events)]
+    RET[Decision retrieval] --> R
+    RET --> M
 ```
 
-The v0.1.0 memory API deliberately requires an explicit memory type and importance. Expiration and tags are stored as metadata. Episodic events are append-oriented audit records, not free-form semantic blobs.
+Mem0 OSS owns durable memory semantics. KiN does not maintain a second vector-search, extraction, deduplication, or consolidation engine. Redis remains working memory and the KiN events table remains the durable episodic/audit stream.
 
 ## 4. Autonomy policy
 
@@ -185,7 +186,8 @@ Goal
 | --- | --- | --- |
 | Current working context | KiN | Redis |
 | Goals | KiN | PostgreSQL |
-| Semantic memory | KiN | PostgreSQL + pgvector |
+| Durable semantic memory | Mem0 OSS under KiN | PostgreSQL + pgvector |
+| Mem0 memory history | Mem0 OSS under KiN | SQLite on the KiN data volume |
 | Episodic audit/events | KiN | PostgreSQL |
 | Agent sessions/turns | TrueForge | TrueForge PostgreSQL schema |
 | Provider routing/config | Bifrost | Bifrost file config in v0.1.0 |
