@@ -68,16 +68,16 @@ curl http://127.0.0.1:8000/ready
 5. Create a memory:
 
 ```bash
-curl -X POST http://127.0.0.1:8000/v1/memory \
-  -H 'Content-Type: application/json' \
+curl -X POST http://127.0.0.1:8000/v1/memory \\
+  -H 'Content-Type: application/json' \\
   -d '{"content":"KIN should prefer reversible actions unless a user policy says otherwise.","memory_type":"semantic","importance":0.9,"tags":["kin","autonomy"]}'
 ```
 
 6. Ask the Decision Maker:
 
 ```bash
-curl -X POST http://127.0.0.1:8000/v1/decide \
-  -H 'Content-Type: application/json' \
+curl -X POST http://127.0.0.1:8000/v1/decide \\
+  -H 'Content-Type: application/json' \\
   -d '{"input":"Check why an internal service is unavailable and propose the safest next step.","goal_id":null,"session_id":"default"}'
 ```
 
