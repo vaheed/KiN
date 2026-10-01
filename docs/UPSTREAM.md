@@ -56,6 +56,7 @@ Sources:
 - https://github.com/mem0ai/mem0/blob/main/docs/components/vectordbs/dbs/pgvector.mdx
 - https://github.com/mem0ai/mem0/blob/main/mem0/memory/main.py
 - https://github.com/mem0ai/mem0/blob/main/mem0/llms/openai.py
+
 ## Bifrost
 
 - Repository: `maximhq/bifrost`
