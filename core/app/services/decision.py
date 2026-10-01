@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 SYSTEM_PROMPT = """
-You are KIN's Executive Decision Maker.
+You are KiN's Executive Decision Maker.
 
 KIN is an autonomous AI coworker. You own the decision about what should happen
 next, but you do not execute tools yourself. Return exactly one JSON object that
@@ -36,9 +36,11 @@ JSON fields:
 {
   "goal": string,
   "intent": string,
-  "action_type": "observe|investigate|communicate|change|restart|deploy|delete|modify_security|external_request|no_action",
+  "action_type": "observe|investigate|research|communicate|change|restart|deploy|delete|modify_security|external_request|delegate|no_action",
   "action_risk": "low|medium|high|critical",
   "impact": "low|medium|high",
+  "environment": "local|development|staging|production|unknown",
+  "scope": "self|internal|external",
   "reversible": boolean,
   "confidence": number 0..1,
   "should_investigate": boolean,
@@ -82,7 +84,9 @@ class DecisionMaker:
             "retrieved_memory": memory_text,
             "request_context": context,
         }
-        raw = self.bifrost.chat_json(SYSTEM_PROMPT, json.dumps(payload, ensure_ascii=False, default=str))
+        complexity = str(context.get("complexity", "standard")).lower()
+        model = self.settings.decision_model_deep if complexity == "deep" else self.settings.decision_model_fast if complexity == "fast" else self.settings.decision_model
+        raw = self.bifrost.chat_json(SYSTEM_PROMPT, json.dumps(payload, ensure_ascii=False, default=str), model=model)
         try:
             return Decision.model_validate(json.loads(_extract_json(raw)))
         except (json.JSONDecodeError, ValidationError) as exc:
