@@ -47,7 +47,7 @@ def test_health() -> None:
     with TestClient(app) as client:
         response = client.get("/health")
     assert response.status_code == 200
-    assert response.json()["service"] == "kin"
+    assert response.json()["service"] == "KiN"
 
 
 def test_decide_api_applies_policy_and_records_event(monkeypatch) -> None:
