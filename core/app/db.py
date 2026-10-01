@@ -54,24 +54,8 @@ class Database:
     def _ensure_schema(self) -> None:
         with self.connection() as conn:
             conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
-            conn.execute(
-                """
-                CREATE TABLE IF NOT EXISTS memories (
-                    id UUID PRIMARY KEY,
-                    memory_type TEXT NOT NULL CHECK (memory_type IN ('semantic', 'episodic')),
-                    content TEXT NOT NULL,
-                    embedding vector(%s),
-                    importance DOUBLE PRECISION NOT NULL DEFAULT 0.5 CHECK (importance >= 0 AND importance <= 1),
-                    tags JSONB NOT NULL DEFAULT '[]'::jsonb,
-                    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-                    expires_at TIMESTAMPTZ,
-                    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-                    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-                )
-                """ % self.settings.embedding_dimensions
-            )
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_memories_type_created ON memories(memory_type, created_at DESC)")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_memories_expires ON memories(expires_at)")
+            # Mem0 owns durable semantic memory in PostgreSQL + pgvector.
+            # KiN only owns operational state here: goals and the append-only event log.
             conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS goals (
